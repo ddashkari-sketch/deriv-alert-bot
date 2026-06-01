@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import requests
-import json
 import os
 
 app = Flask(__name__)
@@ -20,12 +19,25 @@ INDEX_EMOJIS = {
     "boom300": "🚀 BOOM 300",
 }
 
+CHART_LINKS = {
+    "crash1000": "https://www.tradingview.com/chart/?symbol=Deriv:CRASH_1000&interval=15",
+    "crash900": "https://www.tradingview.com/chart/?symbol=Deriv:CRASH_900&interval=15",
+    "crash600": "https://www.tradingview.com/chart/?symbol=Deriv:CRASH_600&interval=15",
+    "crash500": "https://www.tradingview.com/chart/?symbol=Deriv:CRASH_500&interval=15",
+    "boom1000": "https://www.tradingview.com/chart/?symbol=Deriv:BOOM_1000&interval=15",
+    "boom900": "https://www.tradingview.com/chart/?symbol=Deriv:BOOM_900&interval=15",
+    "boom600": "https://www.tradingview.com/chart/?symbol=Deriv:BOOM_600&interval=15",
+    "boom500": "https://www.tradingview.com/chart/?symbol=Deriv:BOOM_500&interval=15",
+    "boom300": "https://www.tradingview.com/chart/?symbol=Deriv:BOOM_300&interval=15",
+}
+
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": CHAT_ID,
         "text": message,
-        "parse_mode": "HTML"
+        "parse_mode": "HTML",
+        "disable_web_page_preview": False
     }
     try:
         requests.post(url, json=payload, timeout=10)
@@ -42,12 +54,15 @@ def webhook():
         signal = data.get("signal", "SPIKE")
         time = data.get("time", "")
         label = INDEX_EMOJIS.get(index, f"📊 {index.upper()}")
+        chart = CHART_LINKS.get(index, "https://www.tradingview.com")
+
         if "crash" in index:
             alert_emoji = "📉"
             alert_type = "ТОМ УНАЛТ ОРЛОО"
         else:
             alert_emoji = "📈"
             alert_type = "ТОМ ӨСӨЛТ ОРЛОО"
+
         message = (
             f"🚨 <b>{label}</b>\n"
             f"{alert_emoji} <b>{alert_type}!</b>\n"
@@ -56,7 +71,7 @@ def webhook():
             f"⬇️ Хэмжээ: <b>{drop}</b>\n"
             f"⏰ Цаг: {time}\n"
             f"━━━━━━━━━━━━━━\n"
-            f"⚡ Сигнал: {signal}"
+            f"📊 <a href='{chart}'>15m Чарт харах</a>"
         )
         send_telegram(message)
         return jsonify({"status": "ok"}), 200
@@ -70,7 +85,9 @@ def test():
         "✅ <b>Deriv Alert Bot ажиллаж байна!</b>\n"
         "📊 Crash 1000/900/600/500\n"
         "📊 Boom 1000/900/600/500/300\n"
-        "⚡ Бүх индексүүд хяналтад байна!"
+        "⚡ Бүх индексүүд хяналтад байна!\n"
+        "━━━━━━━━━━━━━━\n"
+        f"📊 <a href='https://www.tradingview.com/chart/?symbol=Deriv:CRASH_1000&interval=15'>Crash 1000 чарт</a>"
     )
     return jsonify({"status": "Test message sent!"}), 200
 
